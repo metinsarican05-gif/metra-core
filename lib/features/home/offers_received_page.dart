@@ -1,5 +1,9 @@
 // lib/features/home/offers_received_page.dart
 import 'package:flutter/material.dart';
+
+import '../../core/user_session.dart';
+import '../../core/premium/premium_config.dart';
+import '../messages/messages_inbox_page.dart';
 import 'offer_model.dart';
 
 class OffersReceivedPage extends StatelessWidget {
@@ -12,12 +16,24 @@ class OffersReceivedPage extends StatelessWidget {
     return '$day.$month.$year';
   }
 
+  /// Teklif durumu önceliği (küçük sayı = üstte)
+  int _statusRank(OfferStatus status) {
+    switch (status) {
+      case OfferStatus.pending:
+        return 0;
+      case OfferStatus.accepted:
+        return 1;
+      case OfferStatus.rejected:
+        return 2;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // Sahte gelen teklifler
+    // 🔸 DEMO gelen teklifler
     final List<Offer> offers = [
       Offer(
         id: 'o1',
@@ -57,6 +73,28 @@ class OffersReceivedPage extends StatelessWidget {
       ),
     ];
 
+    // -------------------------------------------------
+    // ✅ SIRALAMA (V1 – ADİL + PREMIUM DENGE)
+    // -------------------------------------------------
+    final viewerTier = UserSession.instance.tier;
+    final premiumBoost = PremiumPolicy.offerBoost(viewerTier);
+
+    offers.sort((a, b) {
+      // 1️⃣ Durum önceliği
+      final statusDiff =
+      _statusRank(a.status).compareTo(_statusRank(b.status));
+      if (statusDiff != 0) return statusDiff;
+
+      // 2️⃣ Tarih (yeni üstte)
+      final dateDiff = b.createdAt.compareTo(a.createdAt);
+      if (dateDiff != 0) return dateDiff;
+
+      // 3️⃣ Premium mikro denge (demo)
+      if (premiumBoost > 0) return -1;
+
+      return 0;
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gelen Teklifler'),
@@ -66,6 +104,7 @@ class OffersReceivedPage extends StatelessWidget {
         itemCount: offers.length,
         itemBuilder: (context, index) {
           final offer = offers[index];
+
           return Card(
             elevation: 3,
             margin: const EdgeInsets.only(bottom: 16),
@@ -77,7 +116,7 @@ class OffersReceivedPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // İlan başlığı
+                  // 🔹 İlan başlığı
                   Text(
                     offer.jobTitle,
                     style: const TextStyle(
@@ -86,6 +125,7 @@ class OffersReceivedPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
+
                   Text(
                     'Teklif Veren: ${offer.professionalName}',
                     style: theme.textTheme.bodyMedium,
@@ -130,6 +170,32 @@ class OffersReceivedPage extends StatelessWidget {
                       ),
                     ],
                   ),
+
+                  // ✅ KABUL EDİLEN TEKLİF → MESAJLARA GİT
+                  if (offer.status == OfferStatus.accepted)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.message_outlined),
+                          label: const Text('Mesajlara Git'),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MessagesInboxPage(
+                                  fromOffer: true,
+                                  jobTitle: offer.jobTitle,
+                                  professionalName:
+                                  offer.professionalName,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

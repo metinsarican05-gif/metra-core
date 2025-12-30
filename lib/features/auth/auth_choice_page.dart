@@ -1,4 +1,8 @@
+// ===============================
+// lib/features/auth/auth_choice_page.dart
+// ===============================
 import 'package:flutter/material.dart';
+import '../../core/user_session.dart';
 
 class AuthChoicePage extends StatefulWidget {
   const AuthChoicePage({super.key});
@@ -20,12 +24,85 @@ class _AuthChoicePageState extends State<AuthChoicePage> {
   void _showCheckWarning() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text(
-          "Devam etmek için KVKK ve Kullanım Koşulları’nı onaylamalısın.",
-        ),
+        content: Text("Devam etmek için KVKK ve Kullanım Koşulları’nı onaylamalısın."),
         duration: Duration(seconds: 2),
       ),
     );
+  }
+
+  Future<void> _selectProfessionalTypeAndGoRegister() async {
+    final theme = Theme.of(context);
+
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Profesyonel hesabını seç',
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Bu seçim “firma keşfeti” ve adil sıralama mimarisinin temelidir.',
+                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[700]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+
+                _TypeTile(
+                  icon: Icons.person_outline,
+                  title: 'Bireysel çalışıyorum',
+                  subtitle: 'Tek başıma hizmet veriyorum.',
+                  onTap: () => Navigator.pop(ctx, 'individual'),
+                ),
+                const SizedBox(height: 10),
+
+                _TypeTile(
+                  icon: Icons.badge_outlined,
+                  title: 'Şahıs şirketim var',
+                  subtitle: 'Küçük işletme / fatura kesebilirim.',
+                  onTap: () => Navigator.pop(ctx, 'sole'),
+                ),
+                const SizedBox(height: 10),
+
+                _TypeTile(
+                  icon: Icons.apartment_outlined,
+                  title: 'Firmayım (LTD/A.Ş.)',
+                  subtitle: 'Ekip + proje; birden çok hizmet olabilir.',
+                  onTap: () => Navigator.pop(ctx, 'company'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected == null) return;
+
+    final s = UserSession.instance;
+    s.role = 'professional';
+    s.professionalType = selected;
+
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/register');
+  }
+
+  void _selectCustomerAndGoRegister() {
+    final s = UserSession.instance;
+    s.role = 'customer';
+    s.professionalType = null;
+
+    Navigator.pushReplacementNamed(context, '/register');
   }
 
   void _onSelectRole(String role) {
@@ -34,8 +111,11 @@ class _AuthChoicePageState extends State<AuthChoicePage> {
       return;
     }
 
-    // Şimdilik her iki rol de kayıt ekranına gidiyor
-    Navigator.pushNamed(context, '/register');
+    if (role == 'professional') {
+      _selectProfessionalTypeAndGoRegister();
+    } else {
+      _selectCustomerAndGoRegister();
+    }
   }
 
   Widget _buildRoleCard({
@@ -117,7 +197,6 @@ class _AuthChoicePageState extends State<AuthChoicePage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            // Onboarding ekranına geri dön
             Navigator.pushReplacementNamed(context, '/onboarding');
           },
         ),
@@ -149,27 +228,22 @@ class _AuthChoicePageState extends State<AuthChoicePage> {
             ),
             const SizedBox(height: 24),
 
-            // Profesyonel kartı
             _buildRoleCard(
               icon: Icons.handyman_outlined,
               title: "Hizmet Veriyorum (Profesyonelim)",
-              subtitle:
-              "Usta, mimar, danışman, tasarımcı… İşlerini sergile, yeni müşteriler kazan.",
+              subtitle: "Usta, mimar, danışman, tasarımcı… İşlerini sergile, yeni müşteriler kazan.",
               onTap: () => _onSelectRole("professional"),
             ),
             const SizedBox(height: 16),
 
-            // Müşteri kartı
             _buildRoleCard(
               icon: Icons.search_outlined,
               title: "Hizmet Arıyorum (Müşteriyim)",
-              subtitle:
-              "İhtiyacın olan işi tarif et, teklifleri topla, doğru kişiyle eşleş.",
+              subtitle: "İhtiyacın olan işi tarif et, teklifleri topla, doğru kişiyle eşleş.",
               onTap: () => _onSelectRole("customer"),
             ),
             const SizedBox(height: 24),
 
-            // KVKK & Kullanım Koşulları kutucukları
             Container(
               decoration: BoxDecoration(
                 color: _cardColor.withOpacity(0.95),
@@ -178,62 +252,44 @@ class _AuthChoicePageState extends State<AuthChoicePage> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Theme(
-                // Checkbox görünürlüğünü arttırmak için tema override
                 data: Theme.of(context).copyWith(
                   unselectedWidgetColor: Colors.white70,
                   checkboxTheme: CheckboxThemeData(
-                    side: const BorderSide(
-                      color: Colors.white70,
-                      width: 1.6,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+                    side: const BorderSide(color: Colors.white70, width: 1.6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                   ),
                 ),
                 child: Column(
                   children: [
                     CheckboxListTile(
                       value: _acceptTerms,
-                      onChanged: (val) {
-                        setState(() => _acceptTerms = val ?? false);
-                      },
+                      onChanged: (val) => setState(() => _acceptTerms = val ?? false),
                       activeColor: _primary,
                       checkColor: Colors.black,
                       controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: EdgeInsets.zero,
                       title: const Text(
                         "Kullanım Koşulları’nı kabul ediyorum.",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 13),
                       ),
                     ),
                     CheckboxListTile(
                       value: _acceptKvkk,
-                      onChanged: (val) {
-                        setState(() => _acceptKvkk = val ?? false);
-                      },
+                      onChanged: (val) => setState(() => _acceptKvkk = val ?? false),
                       activeColor: _primary,
                       checkColor: Colors.black,
                       controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: EdgeInsets.zero,
                       title: const Text(
                         "KVKK Metni’ni okudum, kabul ediyorum.",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 13),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/kvkk');
-                        },
+                        onPressed: () => Navigator.pushNamed(context, '/kvkk'),
                         child: const Text(
                           "KVKK ve Kullanım Koşulları’nı Gör",
                           style: TextStyle(
@@ -258,14 +314,67 @@ class _AuthChoicePageState extends State<AuthChoicePage> {
                 SizedBox(width: 6),
                 Text(
                   "Bilgilerin yalnızca Metra iş akışı için kullanılır.",
-                  style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: 11,
-                  ),
+                  style: TextStyle(color: Colors.white54, fontSize: 11),
                 ),
               ],
             ),
             const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TypeTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _TypeTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.withOpacity(0.25)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[700])),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right),
           ],
         ),
       ),

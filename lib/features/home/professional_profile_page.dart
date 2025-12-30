@@ -1,66 +1,78 @@
 // lib/features/home/professional_profile_page.dart
 
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../../core/user_session.dart';
-import 'edit_profile_page.dart';
-import 'rate_professional_page.dart';
+import 'edit_professional_profile_page.dart';
+import 'professional_portfolio_section.dart';
+import '../messages/messages_inbox_page.dart';
+
+// Premium sayfası burada olmalı:
+import '../home/premium_card_page.dart';
 
 class ProfessionalProfilePage extends StatefulWidget {
   const ProfessionalProfilePage({super.key});
 
   @override
-  State<ProfessionalProfilePage> createState() =>
-      _ProfessionalProfilePageState();
+  State<ProfessionalProfilePage> createState() => _ProfessionalProfilePageState();
 }
 
 class _ProfessionalProfilePageState extends State<ProfessionalProfilePage> {
-  final UserSession session = UserSession.instance;
+  final session = UserSession.instance;
 
-  bool _isFollowing = false;
-  bool _isFavorite = false;
+  Color get _primary => const Color(0xFF00B5E2);
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
 
-    final String displayName = session.name ?? "Profesyonel";
-    final String initials = _getInitials(displayName);
-    final String profession = session.profession ?? "Meslek belirtilmemiş";
-    final String location = [
-      if (session.city != null) session.city,
-      if (session.district != null) session.district,
-    ].whereType<String>().join(" / ");
+    final name = session.name?.isNotEmpty == true ? session.name! : 'metin';
+    final profession =
+    session.profession?.isNotEmpty == true ? session.profession! : 'İç Mimar';
+    final city = session.city?.isNotEmpty == true ? session.city! : 'İzmir';
+    final district =
+    session.district?.isNotEmpty == true ? session.district! : 'Konak';
+    final isPremium = session.isPremium;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("METRA - Profesyonel"),
-        centerTitle: true,
-      ),
-      body: SafeArea(
+      body: Container(
+        color: const Color(0xFFF2F4F7),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeaderCard(
-                colorScheme: colorScheme,
-                textTheme: textTheme,
-                initials: initials,
-                displayName: displayName,
+                theme: theme,
+                name: name,
                 profession: profession,
-                location: location,
+                city: city,
+                district: district,
+                isPremium: isPremium,
               ),
+              const SizedBox(height: 12),
+
+              _buildActionRow(theme),
+              const SizedBox(height: 12),
+
+              _buildContactCard(theme),
+              const SizedBox(height: 12),
+
+              _buildAboutCard(theme),
+              const SizedBox(height: 12),
+
+              _buildCompanySummaryCard(theme),
               const SizedBox(height: 16),
-              _buildContactCard(colorScheme),
-              const SizedBox(height: 16),
-              _buildAboutCard(colorScheme, textTheme),
-              const SizedBox(height: 16),
-              _buildPortfolioCard(colorScheme, textTheme),
-              const SizedBox(height: 24),
-              _buildEditProfileButton(colorScheme),
-              const SizedBox(height: 8),
+
+              _buildPortfolioSection(theme),
+              const SizedBox(height: 20),
+
+              _buildBottomActions(
+                context,
+                name: name,
+                profession: profession,
+                city: city,
+                district: district,
+              ),
             ],
           ),
         ),
@@ -68,165 +80,135 @@ class _ProfessionalProfilePageState extends State<ProfessionalProfilePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // HEADER KARTI
-  // ---------------------------------------------------------------------------
-
+  // --- HEADER KISMI ---
   Widget _buildHeaderCard({
-    required ColorScheme colorScheme,
-    required TextTheme textTheme,
-    required String initials,
-    required String displayName,
+    required ThemeData theme,
+    required String name,
     required String profession,
-    required String location,
+    required String city,
+    required String district,
+    required bool isPremium,
   }) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CircleAvatar(
                   radius: 30,
-                  backgroundColor: colorScheme.primary.withOpacity(0.15),
+                  backgroundColor: _primary.withOpacity(0.12),
                   child: Text(
-                    initials,
+                    _getInitials(name),
                     style: TextStyle(
+                      color: _primary,
+                      fontWeight: FontWeight.w800,
                       fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.primary,
                     ),
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        displayName,
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
+                        name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         profession,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey.shade700,
-                        ),
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: Colors.grey[700]),
                       ),
-                      if (location.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              size: 16,
-                              color: Colors.grey.shade600,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                location,
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.shade600.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                      const SizedBox(height: 6),
+                      Row(
                         children: [
-                          Icon(
-                            Icons.verified,
-                            size: 16,
-                            color: Colors.amber.shade700,
-                          ),
+                          const Icon(Icons.location_on_outlined,
+                              size: 16, color: Colors.grey),
                           const SizedBox(width: 4),
                           Text(
-                            "Premium Üye",
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.amber.shade800,
-                            ),
+                            '$city / $district',
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: Colors.grey[700]),
                           ),
                         ],
                       ),
+                    ],
+                  ),
+                ),
+                if (isPremium)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: _primary.withOpacity(0.4)),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildSmallBadge(
-                          icon: Icons.star_rate_rounded,
-                          label: "4.8 / 5",
-                          color: Colors.orange.shade700,
+                        Icon(Icons.workspace_premium,
+                            size: 16, color: _primary),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'Premium Üye',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildFollowButton(),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildFavoriteButton(),
-                ),
+                  ),
               ],
             ),
             const SizedBox(height: 12),
-            // 🔹 PUAN VER BUTONU
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => RateProfessionalPage(
-                        professionalName: displayName,
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.rate_review_outlined),
-                label: const Text("Puan Ver / Yorum Yaz"),
-                style: OutlinedButton.styleFrom(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+
+            Row(
+              children: [
+                const Icon(Icons.star, color: Colors.amber, size: 20),
+                const SizedBox(width: 4),
+                const Text(
+                  '4.8 / 5',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
                   ),
                 ),
-              ),
+                const SizedBox(width: 4),
+                Text(
+                  '(48)',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: Colors.grey[600]),
+                ),
+                const Spacer(),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    _showNotImplementedSnackbar(
+                        context, 'Takip sistemi v1’de eklenecek.');
+                  },
+                  icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
+                  label: const Text('Takip et'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -234,151 +216,193 @@ class _ProfessionalProfilePageState extends State<ProfessionalProfilePage> {
     );
   }
 
-  Widget _buildSmallBadge({
-    required IconData icon,
-    required String label,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: color,
+  // --- MESAJ / YORUM ---
+  Widget _buildActionRow(ThemeData theme) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _onMessagePressed,
+            icon: const Icon(Icons.chat_bubble_outline, size: 18),
+            label: const Text('Mesaj'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: _onRatePressed,
+            icon: const Icon(Icons.star_border, size: 18),
+            label: const Text('Puan / Yorum'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // TAKİP & FAVORİ BUTONLARI
-  // ---------------------------------------------------------------------------
+  void _onMessagePressed() {
+    final profName = session.name?.isNotEmpty == true ? session.name! : 'Metin';
 
-  Widget _buildFollowButton() {
-    return OutlinedButton.icon(
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MessagesInboxPage(
+          fromOffer: false,
+          jobTitle: null,
+          professionalName: profName,
         ),
       ),
-      onPressed: () {
-        setState(() {
-          _isFollowing = !_isFollowing;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isFollowing
-                  ? "Bu profesyoneli takip ediyorsun."
-                  : "Takipten çıktın.",
-            ),
-          ),
-        );
-      },
-      icon: Icon(
-        _isFollowing ? Icons.check : Icons.person_add_alt_1_outlined,
-      ),
-      label: Text(_isFollowing ? "Takip Ediliyor" : "Takip Et"),
     );
   }
 
-  Widget _buildFavoriteButton() {
-    return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-      onPressed: () {
-        setState(() {
-          _isFavorite = !_isFavorite;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isFavorite
-                  ? "Favori ustalarına eklendi."
-                  : "Favorilerden çıkarıldı.",
-            ),
+
+  void _onRatePressed() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        double currentRating = 5.0;
+        return AlertDialog(
+          title: const Text('Puan ver / Yorum (Demo)'),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Bu alan gerçek puanlama sistemi ile bağlanacak.\n'
+                        'Şimdilik demo bir arayüz gösteriyoruz.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: Colors.grey[700]),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      final filled = index < currentRating.round();
+                      return IconButton(
+                        onPressed: () {
+                          setState(() {
+                            currentRating = index + 1.0;
+                          });
+                        },
+                        icon: Icon(
+                          filled ? Icons.star : Icons.star_border,
+                          color: Colors.amber,
+                        ),
+                      );
+                    }),
+                  ),
+                  Text('Seçilen puan: ${currentRating.toStringAsFixed(1)}'),
+                  const SizedBox(height: 8),
+                  TextField(
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'İstersen kısa bir yorum yaz...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _showNotImplementedSnackbar(
+                    context, 'Puan / yorum kaydetme henüz aktif değil.');
+              },
+              child: const Text('Kaydet (demo)'),
+            ),
+          ],
         );
       },
-      icon: Icon(
-        _isFavorite ? Icons.favorite : Icons.favorite_border,
-      ),
-      label: Text(_isFavorite ? "Favoride" : "Favori Usta"),
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // İLETİŞİM KARTI (WHATSAPP, TELEFON, WEB)
-  // ---------------------------------------------------------------------------
-
-  Widget _buildContactCard(ColorScheme colorScheme) {
-    final String? phone = session.phone;
-    final String? website = session.websiteUrl;
-
+  // --- İLETİŞİM ---
+  Widget _buildContactCard(ThemeData theme) {
     return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "İletişim",
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
+            Text(
+              'İletişim',
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
-                  child: _buildContactButton(
-                    colorScheme: colorScheme,
-                    icon: Icons.chat_bubble_outline,
-                    label: "WhatsApp",
-                    onTap: () => _openWhatsApp(phone),
+                  child: OutlinedButton.icon(
+                    onPressed: _onWhatsAppPressed,
+                    icon: const Icon(Icons.chat_outlined),
+                    label: const Text('WhatsApp'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
-                  child: _buildContactButton(
-                    colorScheme: colorScheme,
-                    icon: Icons.phone_in_talk_outlined,
-                    label: "Ara",
-                    onTap: () => _callPhone(phone),
+                  child: OutlinedButton.icon(
+                    onPressed: _onCallPressed,
+                    icon: const Icon(Icons.call_outlined),
+                    label: const Text('Ara'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            _buildContactButton(
-              colorScheme: colorScheme,
-              icon: Icons.language_outlined,
-              label: "Web Sitesi",
-              fullWidth: true,
-              onTap: () => _openWebsite(website),
+            TextButton.icon(
+              onPressed: _onWebsitePressed,
+              icon: const Icon(Icons.language_outlined, size: 18),
+              label: Text(
+                session.websiteUrl?.isNotEmpty == true
+                    ? 'Web sitesini aç'
+                    : 'Web sitesi ekle',
+              ),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                foregroundColor: _primary,
+              ),
             ),
           ],
         ),
@@ -386,288 +410,241 @@ class _ProfessionalProfilePageState extends State<ProfessionalProfilePage> {
     );
   }
 
-  Widget _buildContactButton({
-    required ColorScheme colorScheme,
+  void _onWhatsAppPressed() {
+    if (session.phone == null || session.phone!.isEmpty) {
+      _showNotImplementedSnackbar(
+          context, 'Önce profil düzenle kısmından telefon numarası eklemelisin.');
+      return;
+    }
+    _showNotImplementedSnackbar(
+        context, 'WhatsApp entegrasyonu v1’de eklenecek.');
+  }
+
+  void _onCallPressed() {
+    if (session.phone == null || session.phone!.isEmpty) {
+      _showNotImplementedSnackbar(
+          context, 'Önce profil düzenle kısmından telefon numarası eklemelisin.');
+      return;
+    }
+    _showNotImplementedSnackbar(context, 'Arama entegrasyonu v1’de eklenecek.');
+  }
+
+  void _onWebsitePressed() {
+    if (session.websiteUrl?.isNotEmpty == true) {
+      _showNotImplementedSnackbar(context, 'Web sitesi açma v1’de eklenecek.');
+    } else {
+      _showNotImplementedSnackbar(
+          context, 'Web sitesi eklemek için profili düzenleyebilirsin.');
+      _openEditProfile();
+    }
+  }
+
+  // --- HAKKINDA ---
+  Widget _buildAboutCard(ThemeData theme) {
+    final about = session.aboutText;
+    final hasText = about != null && about.trim().isNotEmpty;
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Hakkında',
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              hasText
+                  ? about!
+                  : 'Bu profesyonel henüz detaylı bir açıklama eklemedi. '
+                  'Profil düzenleme ekranından çalışma tarzını ve sunduğun '
+                  'hizmetleri anlatabilirsin.',
+              style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[800]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- ŞİRKET ÖZETİ ---
+  Widget _buildCompanySummaryCard(ThemeData theme) {
+    final companyName = session.companyName ?? 'Şirket adı belirtilmemiş';
+    final experience = session.experienceYears;
+    final expText = experience != null ? '$experience yıl' : 'Belirtilmemiş';
+
+    final workAreas = session.workAreas;
+    final workAreasText =
+    (workAreas != null && workAreas.trim().isNotEmpty) ? workAreas : 'Belirtilmemiş';
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Şirket Özeti',
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 10),
+            _summaryRow(
+              icon: Icons.apartment_outlined,
+              title: 'Şirket adı',
+              value: companyName,
+            ),
+            const SizedBox(height: 8),
+            _summaryRow(
+              icon: Icons.timeline_outlined,
+              title: 'Tecrübe',
+              value: expText,
+            ),
+            const SizedBox(height: 8),
+            _summaryRow(
+              icon: Icons.location_city_outlined,
+              title: 'Çalışma bölgeleri',
+              value: workAreasText,
+            ),
+            const SizedBox(height: 8),
+            _summaryRow(
+              icon: Icons.attach_money_outlined,
+              title: 'Minimum proje bütçesi',
+              value: 'Belirtilmemiş',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _summaryRow({
     required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    bool fullWidth = false,
+    required String title,
+    required String value,
   }) {
-    return SizedBox(
-      width: fullWidth ? double.infinity : null,
-      child: OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        onPressed: onTap,
-        icon: Icon(icon, size: 18, color: colorScheme.primary),
-        label: Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: colorScheme.primary,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _openWhatsApp(String? phone) async {
-    if (phone == null || phone.trim().isEmpty) {
-      _showSimpleSnack("Telefon numarası kayıtlı değil.");
-      return;
-    }
-
-    final digits = phone.replaceAll(RegExp(r'\D'), '');
-    final withCountryCode =
-    digits.startsWith('0') ? '90${digits.substring(1)}' : digits;
-
-    final uri = Uri.parse(
-      "https://wa.me/$withCountryCode?text=Merhaba,%20Metra%20üzerinden%20yazıyorum.",
-    );
-
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      _showSimpleSnack("WhatsApp açılamadı.");
-    }
-  }
-
-  Future<void> _callPhone(String? phone) async {
-    if (phone == null || phone.trim().isEmpty) {
-      _showSimpleSnack("Telefon numarası kayıtlı değil.");
-      return;
-    }
-
-    final digits = phone.replaceAll(RegExp(r'\D'), '');
-    final uri = Uri.parse("tel:$digits");
-
-    if (!await launchUrl(uri)) {
-      _showSimpleSnack("Arama başlatılamadı.");
-    }
-  }
-
-  Future<void> _openWebsite(String? website) async {
-    if (website == null || website.trim().isEmpty) {
-      _showSimpleSnack("Web sitesi ekli değil.");
-      return;
-    }
-
-    String url = website.trim();
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      url = "https://$url";
-    }
-
-    final uri = Uri.parse(url);
-
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      _showSimpleSnack("Web sitesi açılamadı.");
-    }
-  }
-
-  void _showSimpleSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // HAKKINDA KARTI
-  // ---------------------------------------------------------------------------
-
-  Widget _buildAboutCard(ColorScheme colorScheme, TextTheme textTheme) {
-    final String company = session.companyName ?? "Şirket adı belirtilmemiş";
-    final int? years = session.experienceYears;
-    final String about = session.aboutText ??
-        "Bu profesyonel henüz detaylı bir açıklama eklemedi.";
-
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Hakkında",
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  Icons.business_outlined,
-                  size: 18,
-                  color: colorScheme.primary,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: Colors.grey[700]),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    company,
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (years != null) ...[
-              Row(
-                children: [
-                  Icon(
-                    Icons.timelapse_outlined,
-                    size: 18,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    "$years+ yıl deneyim",
-                    style: textTheme.bodyMedium,
-                  ),
-                ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[700],
+                ),
+              ),
             ],
-            Text(
-              about,
-              style: textTheme.bodyMedium?.copyWith(
-                color: Colors.grey.shade800,
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // PORTFÖY KARTI (GENEL MODEL)
-  // ---------------------------------------------------------------------------
-
-  Widget _buildPortfolioCard(ColorScheme colorScheme, TextTheme textTheme) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Portföy ve Vitrin",
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Tamamladığın projeleri, örnek çalışmalarını ve önce/sonra görsellerini buraya ekleyebilirsin. "
-                  "Metra, marangozdan yazılımcıya kadar her meslek için bu alanı ortak vitrin olarak kullanır.",
-              style: textTheme.bodySmall?.copyWith(
-                color: Colors.grey.shade700,
-              ),
-            ),
-            const SizedBox(height: 12),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              physics: const NeverScrollableScrollPhysics(),
-              children: List.generate(4, (index) {
-                return Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: Colors.grey.shade200,
-                  ),
-                  child: Center(
-                    child: Text(
-                      "Örnek Çalışma ${index + 1}",
-                      style: const TextStyle(
-                        color: Colors.black54,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Not: Şu anda demo içeriği gösteriliyor. Gerçek uygulamada bu alan senin yüklediğin proje fotoğraflarıyla dolacak.",
-              style: textTheme.bodySmall?.copyWith(
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ],
-        ),
-      ),
+  // --- PORTFÖY ---
+  Widget _buildPortfolioSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: const [
+        ProfessionalPortfolioSection(),
+        SizedBox(height: 4),
+      ],
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // PROFİLİ DÜZENLE BUTONU
-  // ---------------------------------------------------------------------------
-
-  Widget _buildEditProfileButton(ColorScheme colorScheme) {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          side: BorderSide(
-            color: colorScheme.primary,
-            width: 1.3,
-          ),
-        ),
-        onPressed: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const EditProfilePage(),
+  // --- ALT AKSİYONLAR ---
+  Widget _buildBottomActions(
+      BuildContext context, {
+        required String name,
+        required String profession,
+        required String city,
+        required String district,
+      }) {
+    return Column(
+      children: [
+        const Divider(height: 24),
+        OutlinedButton.icon(
+          onPressed: _openEditProfile,
+          icon: const Icon(Icons.edit_outlined),
+          label: const Text('Profili düzenle'),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(999),
             ),
-          );
-          setState(() {}); // Geri dönünce ekrandaki veriyi tazele
-        },
-        icon: Icon(
-          Icons.edit_outlined,
-          color: colorScheme.primary,
-        ),
-        label: Text(
-          "Profili Düzenle",
-          style: TextStyle(
-            color: colorScheme.primary,
-            fontWeight: FontWeight.w600,
           ),
         ),
-      ),
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PremiumCardPage(
+                  name: name,
+                  profession: profession,
+                  city: city,
+                  district: district,
+                ),
+              ),
+            );
+          },
+          icon: const Icon(Icons.credit_card_outlined),
+          label: const Text('Kartvizit & Premium paketler'),
+          style: TextButton.styleFrom(
+            foregroundColor: _primary,
+          ),
+        ),
+      ],
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // YARDIMCI
-  // ---------------------------------------------------------------------------
+  void _openEditProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const EditProfessionalProfilePage(),
+      ),
+    );
+    setState(() {});
+  }
+
+  // --- YARDIMCI ---
+  void _showNotImplementedSnackbar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   String _getInitials(String name) {
-    final parts = name.trim().split(" ");
-    if (parts.length == 1) {
-      return parts.first.substring(0, 1).toUpperCase();
-    }
-    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
-        .toUpperCase();
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return 'M';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    final first = parts.first.substring(0, 1).toUpperCase();
+    final last = parts.last.substring(0, 1).toUpperCase();
+    return '$first$last';
   }
 }

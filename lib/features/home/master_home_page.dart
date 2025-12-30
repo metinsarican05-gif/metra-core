@@ -5,6 +5,7 @@ import 'jobs_page.dart';
 import 'professional_profile_page.dart';
 import 'create_job_page.dart';
 import 'create_post_page.dart';
+import '../messages/messages_inbox_page.dart';
 
 class MasterHomePage extends StatefulWidget {
   const MasterHomePage({super.key});
@@ -17,19 +18,15 @@ class _MasterHomePageState extends State<MasterHomePage> {
   int _selectedIndex = 0;
 
   late final List<Widget> _pages = <Widget>[
-    const FeedPage(), // Akış
-    const JobsPage(), // İlanlar
-    const Center(child: Text('Mesajlar (taslak)')), // Mesajlar
-    const ProfessionalProfilePage(), // Profil
+    const FeedPage(), // 0 Akış
+    const JobsPage(), // 1 İlanlar
+    const MessagesInboxPage(), // 2 Mesajlar
+    const ProfessionalProfilePage(), // 3 Profil
   ];
 
   Color get _primaryColor => Theme.of(context).colorScheme.primary;
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
+  void _onItemTapped(int index) => setState(() => _selectedIndex = index);
 
   void _onFabPressed() {
     showModalBottomSheet(
@@ -47,12 +44,7 @@ class _MasterHomePageState extends State<MasterHomePage> {
                 title: const Text('İlan / İhale Aç'),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const CreateJobPage(),
-                    ),
-                  );
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateJobPage()));
                 },
               ),
               const Divider(height: 0),
@@ -61,45 +53,13 @@ class _MasterHomePageState extends State<MasterHomePage> {
                 title: const Text('İşini Paylaş (Gönderi)'),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const CreatePostPage(),
-                    ),
-                  );
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CreatePostPage()));
                 },
               ),
             ],
           ),
         );
       },
-    );
-  }
-
-  BottomNavigationBar _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: _selectedIndex,
-      onTap: _onItemTapped,
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: _primaryColor,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          label: 'Akış',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.assignment_outlined),
-          label: 'İlanlar',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat_bubble_outline),
-          label: 'Mesajlar',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Profil',
-        ),
-      ],
     );
   }
 
@@ -111,10 +71,8 @@ class _MasterHomePageState extends State<MasterHomePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            tooltip: 'Usta / Profesyonel Bul',
-            onPressed: () {
-              Navigator.pushNamed(context, '/explore');
-            },
+            tooltip: 'Usta / Profesyonel Bul (Keşfet)',
+            onPressed: () => Navigator.pushNamed(context, '/explore'),
           ),
         ],
       ),
@@ -124,8 +82,19 @@ class _MasterHomePageState extends State<MasterHomePage> {
         backgroundColor: _primaryColor,
         child: const Icon(Icons.add),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: _primaryColor,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Akış'),
+          BottomNavigationBarItem(icon: Icon(Icons.assignment_outlined), label: 'İlanlar'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Mesajlar'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profil'),
+        ],
+      ),
     );
   }
 }

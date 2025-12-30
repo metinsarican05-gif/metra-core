@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/user_session.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -47,6 +48,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _finish() {
+    // ✅ Onboarding tamamlandı
+    UserSession.instance.onboardingDone = true;
+
+    // ✅ Auth ekranına geç
     Navigator.pushReplacementNamed(context, '/authChoice');
   }
 
@@ -173,8 +178,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   icon: Icons.design_services_outlined,
                 ),
                 _buildPage(
-                  title:
-                  "Değerin görünür olduğunda iş, kendi müşterisini bulur.",
+                  title: "Değerin görünür olduğunda iş, kendi müşterisini bulur.",
                   subtitle:
                   "Metra, emeğini doğru kitleyle buluşturan net ve prestijli bir iş akışı sunar.",
                   icon: Icons.handshake_outlined,

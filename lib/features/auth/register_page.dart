@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import '../../core/user_session.dart';
 import 'login_page.dart';
 
+// ✅ Rol bazlı doğru home sayfaları
+import '../home/master_home_page.dart';
+import '../home/customer_home_page.dart';
+
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -190,10 +194,7 @@ class _RegisterPageState extends State<RegisterPage> {
       labelStyle: const TextStyle(color: Colors.white70, fontSize: 13),
       hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
       prefixIcon: icon != null
-          ? Icon(
-        icon,
-        color: colorScheme.primary,
-      )
+          ? Icon(icon, color: colorScheme.primary)
           : null,
       filled: true,
       fillColor: Colors.white.withOpacity(0.04),
@@ -226,6 +227,18 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    );
+  }
+
+  void _goHomeByRole() {
+    final session = UserSession.instance;
+
+    final Widget target =
+    session.role == 'customer' ? const CustomerHomePage() : const MasterHomePage();
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => target),
     );
   }
 
@@ -329,8 +342,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) return null;
-                    final emailRegex = RegExp(
-                        r'^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,4}$');
+                    final emailRegex =
+                    RegExp(r'^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,4}$');
                     if (!emailRegex.hasMatch(value.trim())) {
                       return "Geçerli bir e-posta gir.";
                     }
@@ -382,12 +395,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     icon: Icons.location_city_outlined,
                   ),
                   items: _cities
-                      .map(
-                        (city) => DropdownMenuItem<String>(
-                      value: city,
-                      child: Text(city),
-                    ),
-                  )
+                      .map((city) => DropdownMenuItem<String>(
+                    value: city,
+                    child: Text(city),
+                  ))
                       .toList(),
                   onChanged: (value) {
                     setState(() {
@@ -411,17 +422,14 @@ class _RegisterPageState extends State<RegisterPage> {
                   style: const TextStyle(color: Colors.white),
                   decoration: _buildInputDecoration(
                     label: "İlçe",
-                    hint:
-                    _selectedCity == null ? "Önce il seç" : "İlçe seç",
+                    hint: _selectedCity == null ? "Önce il seç" : "İlçe seç",
                     icon: Icons.map_outlined,
                   ),
                   items: currentDistricts
-                      .map(
-                        (dist) => DropdownMenuItem<String>(
-                      value: dist,
-                      child: Text(dist),
-                    ),
-                  )
+                      .map((dist) => DropdownMenuItem<String>(
+                    value: dist,
+                    child: Text(dist),
+                  ))
                       .toList(),
                   onChanged: (value) {
                     setState(() {
@@ -461,12 +469,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     icon: Icons.work_outline,
                   ),
                   items: _professions
-                      .map(
-                        (p) => DropdownMenuItem<String>(
-                      value: p,
-                      child: Text(p),
-                    ),
-                  )
+                      .map((p) => DropdownMenuItem<String>(
+                    value: p,
+                    child: Text(p),
+                  ))
                       .toList(),
                   onChanged: (value) {
                     setState(() {
@@ -512,13 +518,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content:
-                            Text("Hesap oluşturuldu (demo). Metra’ya hoş geldin."),
+                            content: Text(
+                                "Hesap oluşturuldu (demo). Metra’ya hoş geldin."),
                           ),
                         );
 
-                        // Ana sayfaya yönlendirme
-                        Navigator.pushReplacementNamed(context, '/home');
+                        // ✅ Rol bazlı doğru ana sayfaya git
+                        _goHomeByRole();
                       }
                     },
                     child: const Text("Hesap Oluştur"),

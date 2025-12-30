@@ -1,5 +1,8 @@
 // lib/features/home/offers_sent_page.dart
 import 'package:flutter/material.dart';
+
+import '../../core/user_session.dart';
+import '../../core/premium/premium_config.dart';
 import 'offer_model.dart';
 
 class OffersSentPage extends StatelessWidget {
@@ -12,12 +15,25 @@ class OffersSentPage extends StatelessWidget {
     return '$day.$month.$year';
   }
 
+  /// Durum önceliği (küçük sayı = üstte)
+  int _statusRank(OfferStatus status) {
+    switch (status) {
+      case OfferStatus.pending:
+        return 0;
+      case OfferStatus.accepted:
+        return 1;
+      case OfferStatus.rejected:
+        return 2;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final tier = UserSession.instance.tier;
 
-    // Sahte "benim verdiğim" teklifler
+    // 🔸 SAHTE "benim verdiğim" teklifler (demo)
     final List<Offer> offers = [
       Offer(
         id: 's1',
@@ -45,80 +61,150 @@ class OffersSentPage extends StatelessWidget {
       ),
     ];
 
+    // -------------------------------------------------
+    // ✅ SIRALAMA (KULLANICI ODAKLI – ADİL)
+    // -------------------------------------------------
+    offers.sort((a, b) {
+      final statusDiff =
+      _statusRank(a.status).compareTo(_statusRank(b.status));
+      if (statusDiff != 0) return statusDiff;
+
+      return b.createdAt.compareTo(a.createdAt);
+    });
+
+    final isProOrAbove =
+        tier == UstaTier.pro || tier == UstaTier.vitrin || tier == UstaTier.sponsor;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Verdiğim Teklifler'),
       ),
-      body: ListView.builder(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        itemCount: offers.length,
-        itemBuilder: (context, index) {
-          final offer = offers[index];
-          return Card(
-            elevation: 3,
-            margin: const EdgeInsets.only(bottom: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
+        children: [
+          // ✅ ÜST BİLGİ KARTI (psikolojik fark burada)
+          _infoCard(context, isProOrAbove),
+
+          const SizedBox(height: 12),
+
+          ...offers.map(
+                (offer) => Card(
+              elevation: 3,
+              margin: const EdgeInsets.only(bottom: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      offer.jobTitle,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Teklif Sahibi: ${offer.professionalName}',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.attach_money,
+                            size: 18, color: colorScheme.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${offer.price.toStringAsFixed(0)}₺',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.schedule_outlined, size: 18),
+                        const SizedBox(width: 4),
+                        Text(
+                          offer.estimatedDuration,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      offer.note,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _StatusChip(status: offer.status),
+                        Text(
+                          _formatDate(offer.createdAt),
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoCard(BuildContext context, bool isProOrAbove) {
+    final theme = Theme.of(context);
+
+    final title =
+    isProOrAbove ? 'Paket Avantajın Aktif' : 'Daha Hızlı Dönüş Almak İçin';
+
+    final body = isProOrAbove
+        ? 'Tekliflerin karşı tarafa daha dengeli ve görünür şekilde iletilir. İletişim her zaman ücretsizdir.'
+        : 'Teklif gönderebilirsin. Profesyonel paket, tekliflerinin karşı tarafta daha görünür olmasına yardımcı olur.';
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              isProOrAbove ? Icons.verified_outlined : Icons.info_outline,
+              size: 22,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    offer.jobTitle,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Teklif Sahibi: ${offer.professionalName}',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.attach_money,
-                          size: 18, color: colorScheme.primary),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${offer.price.toStringAsFixed(0)}₺',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Icon(Icons.schedule_outlined, size: 18),
-                      const SizedBox(width: 4),
-                      Text(
-                        offer.estimatedDuration,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    offer.note,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _StatusChip(status: offer.status),
-                      Text(
-                        _formatDate(offer.createdAt),
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ],
+                    body,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[700],
+                      height: 1.25,
+                    ),
                   ),
                 ],
               ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }

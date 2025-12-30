@@ -1,52 +1,81 @@
 // lib/core/user_session.dart
+import 'premium/premium_config.dart';
 
-/// Uygulama içindeki geçici (lokal) oturum bilgisi.
-/// Şimdilik backend yok, bu yüzden kullanıcıyla ilgili
-/// temel bilgileri burada tutuyoruz.
+/// Uygulama boyunca "demo auth" ve kullanıcı durumunu tutan tekil oturum sınıfı.
+/// V1: Local in-memory (kalıcı değil). Backend gelince burası repo/state ile değişebilir.
 class UserSession {
   UserSession._internal();
 
   static final UserSession instance = UserSession._internal();
 
-  /// Temel bilgiler
+  /// Onboarding tamamlandı mı? (onboarding_page.dart bunu set ediyor)
+  bool onboardingDone = false;
+
+  /// 'professional' | 'customer'
+  String role = 'professional';
+
+  /// 'individual' | 'sole' | 'company' (sadece professional için)
+  String? professionalType;
+
+  /// Paket seviyesi
+  UstaTier tier = UstaTier.standard;
+
+  // ---- Temel kimlik ----
   String? name;
   String? phone;
   String? email;
+
+  // ---- Konum / meslek ----
   String? city;
   String? district;
   String? profession;
 
-  /// Rol bilgisi (Model 1)
-  /// 'professional'  -> usta / profesyonel
-  /// 'customer'      -> hizmet arayan
-  String role = 'professional';
+  // ---- Profil detayları ----
+  String? companyName;
+  int? experienceYears;
+  String? aboutText;
+  String? websiteUrl;
+  String? workAreas;
 
-  /// Premium üyelik bilgisi (şimdilik demo amaçlı)
-  bool isPremium = true;
+  /// Standart dışındaki her tier premium kabul edilir.
+  bool get isPremium => tier != UstaTier.standard;
 
-  /// Gelişmiş profil alanları
-  String? companyName;     // Şirket / marka adı
-  int? experienceYears;    // Toplam tecrübe yılı
-  String? aboutText;       // Hakkında açıklaması
-  String? websiteUrl;      // Web sitesi adresi (https://...)
-  String? logoUrl;         // Şirket logosu (ileride network image için)
+  /// Demo puan
+  double rating = 4.8;
+  int ratingCount = 48;
 
-  /// Tüm oturum bilgisini sıfırlar
-  void clear() {
+  void reset() {
+    onboardingDone = false;
+
+    role = 'professional';
+    professionalType = null;
+    tier = UstaTier.standard;
+
     name = null;
     phone = null;
     email = null;
+
     city = null;
     district = null;
     profession = null;
-
-    role = 'customer';
-    isPremium = false;
 
     companyName = null;
     experienceYears = null;
     aboutText = null;
     websiteUrl = null;
-    logoUrl = null;
+    workAreas = null;
+
+    rating = 4.8;
+    ratingCount = 48;
+  }
+
+  bool get isProfessional => role == 'professional';
+  bool get isCustomer => role == 'customer';
+
+  @override
+  String toString() {
+    return 'UserSession(onboardingDone: $onboardingDone, role: $role, professionalType: $professionalType, tier: $tier, '
+        'name: $name, phone: $phone, email: $email, city: $city, district: $district, '
+        'profession: $profession, companyName: $companyName, experienceYears: $experienceYears)';
   }
 }

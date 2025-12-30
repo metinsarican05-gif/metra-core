@@ -1,4 +1,3 @@
-// lib/features/home/customer_home_page.dart
 import 'package:flutter/material.dart';
 import 'feed_page.dart';
 import 'jobs_page.dart';
@@ -15,20 +14,14 @@ class CustomerHomePage extends StatefulWidget {
 class _CustomerHomePageState extends State<CustomerHomePage> {
   int _selectedIndex = 0;
 
-  // Müşteri için sekme içerikleri
   final List<Widget> _pages = const [
-    FeedPage(),   // 0: Akış
-    JobsPage(),   // 1: İlanlar
-    OffersOverviewPage(), // 2: Teklifler
+    FeedPage(),   // 0 Akış
+    JobsPage(),   // 1 İlanlar
+    OffersOverviewPage(), // 2 Teklifler
     Center(child: Text('Müşteri Profil Ekranı')),
   ];
 
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
+  void _onItemTapped(int index) => setState(() => _selectedIndex = index);
 
   void _onFabPressed() {
     showModalBottomSheet(
@@ -46,15 +39,9 @@ class _CustomerHomePageState extends State<CustomerHomePage> {
                 title: const Text('İlan / İhale Aç'),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const CreateJobPage(),
-                    ),
-                  );
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateJobPage()));
                 },
               ),
-              // İstersen müşteri tarafında ikinci aksiyonu sonra doldururuz
             ],
           ),
         );
@@ -68,7 +55,7 @@ class _CustomerHomePageState extends State<CustomerHomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nexira - Hizmet Arayan'),
+        title: const Text('METRA - Müşteri'),
       ),
       body: _pages[_selectedIndex],
       floatingActionButton: FloatingActionButton(
@@ -76,29 +63,17 @@ class _CustomerHomePageState extends State<CustomerHomePage> {
         backgroundColor: primaryColor,
         child: const Icon(Icons.add),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: primaryColor,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Akış',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment_outlined),
-            label: 'İlanlar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Mesajlar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profil',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Akış'),
+          BottomNavigationBarItem(icon: Icon(Icons.assignment_outlined), label: 'İlanlar'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Teklifler'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profil'),
         ],
       ),
     );

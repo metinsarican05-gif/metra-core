@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../core/user_session.dart';
 import 'register_page.dart';
-import '../../main.dart';
+
+// ✅ Rol bazlı doğru home sayfaları
+import '../home/master_home_page.dart';
+import '../home/customer_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -18,9 +22,27 @@ class _LoginPageState extends State<LoginPage> {
   bool isLoading = false;
 
   @override
+  void dispose() {
+    phoneCtrl.dispose();
+    passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  void _goHomeByRole() {
+    final session = UserSession.instance;
+
+    final Widget target =
+    session.role == 'customer' ? const CustomerHomePage() : const MasterHomePage();
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => target),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final Color background = const Color(0xFF0A1A2F);
-    final Color card = const Color(0xFF101E33);
     final Color primary = const Color(0xFF1ED1F5);
 
     return Scaffold(
@@ -29,6 +51,7 @@ class _LoginPageState extends State<LoginPage> {
         backgroundColor: background,
         elevation: 0,
         title: const Text("Giriş Yap"),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -52,7 +75,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 30),
 
-              /// GİRİŞ BUTONU
+              // GİRİŞ BUTONU
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -71,20 +94,33 @@ class _LoginPageState extends State<LoginPage> {
                       setState(() => isLoading = true);
 
                       Future.delayed(const Duration(seconds: 1), () {
+                        if (!mounted) return;
+
                         setState(() => isLoading = false);
 
-                        Navigator.pushReplacementNamed(context, "/home");
+                        // ✅ DEMO LOGIN: session’a minimum bilgiyi yaz
+                        final s = UserSession.instance;
+                        s.phone = phoneCtrl.text.trim();
+
+                        // Not: Gerçek auth yokken role zaten seçilmiş varsayıyoruz.
+                        // Eğer role hiç seçilmemişse default professional kalır.
+
+                        _goHomeByRole();
                       });
                     }
                   },
                   child: isLoading
-                      ? const CircularProgressIndicator(
-                    color: Colors.black,
+                      ? const SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(color: Colors.black),
                   )
                       : const Text(
                     "Giriş Yap",
                     style: TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'job_model.dart';
 
 class CreateOfferPage extends StatefulWidget {
-  final Job job;
+  final JobModel job;
 
   const CreateOfferPage({super.key, required this.job});
 
@@ -68,7 +68,7 @@ class _CreateOfferPageState extends State<CreateOfferPage> {
               ),
               const SizedBox(height: 4),
               Text(
-                '${widget.job.city} / ${widget.job.district} • ${widget.job.category}',
+                '${widget.job.location} / ${widget.job.location} • ${widget.job.category}',
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
